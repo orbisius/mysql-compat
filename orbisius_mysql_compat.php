@@ -92,6 +92,7 @@ if ( ! function_exists( 'mysql_connect' ) ) {
                     . "Can't do compatibility for old mysql functions without it.", E_USER_ERROR);
         }
         
+        $port = empty( $port ) ? 3306 : (int) $port;        
         $sock = mysqli_connect( $host, $user, $pass, $database, $port, $socket );
         
         if ( mysqli_connect_errno() ) {
@@ -168,7 +169,7 @@ if ( ! function_exists( 'mysql_error' ) ) {
         $res = false;
         
         if ( $dbh ) {
-            $res = mysqli_error( $dbh, $query );
+            $res = mysqli_error( $dbh );
         }
         
         return $res;
@@ -216,7 +217,11 @@ if ( ! function_exists( 'mysql_fetch_row' ) ) {
         $res = '';
         
         if ( $dbh ) {
-            $res = mysqli_fetch_array( $result );
+            $res = $result ? mysqli_fetch_array( $result ) : false;
+            
+            if ( ! $result ) {
+                echo "SQL Error: " . mysql_error($dbh);
+            }
         }
         
         return $res;
@@ -225,7 +230,12 @@ if ( ! function_exists( 'mysql_fetch_row' ) ) {
 
 if ( ! function_exists( 'mysql_fetch_array' ) ) {
     function mysql_fetch_array( $result = null, $ret_type = null ) {
-        $res = mysqli_fetch_array( $result );
+        $res = $result ? mysqli_fetch_array( $result ) : false;
+
+        if ( ! $result ) {
+            echo "SQL Error: " . mysql_error();
+        }
+
         return $res;
     }
 }
@@ -541,5 +551,14 @@ if ( ! function_exists( 'mysql_field_table' ) ) {
     function mysql_field_table( $result, $field_offset = 0 ) {
         $res = mysqli_fetch_field_direct( $result, $field_offset );
         return empty( $res->table ) ? '' : $res->table;
+    }
+}
+
+if ( ! function_exists( 'mysql_close' ) ) {
+    function mysql_close( $link_identifier ) {
+        $dbh = is_null( $link_identifier )
+            ? app_orbisius_mysql_compat::$dbh
+            : $link_identifier;
+        mysqli_close($dbh);
     }
 }
